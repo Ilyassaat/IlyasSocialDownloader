@@ -1,82 +1,86 @@
-from flask import Flask, request, jsonify, send_from_directory
-import yt_dlp
 import os
 import re
-import uuid
-import threading
+import tempfile
+import shutil
+from flask import Flask, request, jsonify, send_file, render_template
+
+import yt_dlp
+
 
 app = Flask(__name__)
 
+
+# =========================================================
+# AYARLAR
+# =========================================================
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DOWNLOAD_DIR = os.path.join(BASE_DIR, "downloads")
 
-os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+# Sunucuda FFmpeg PATH'e ekliyse sadece "ffmpeg" yeterlidir.
+# Projede ffmpeg klasörü varsa onu da otomatik arıyoruz.
+LOCAL_FFMPEG = os.path.join(BASE_DIR, "ffmpeg", "bin")
 
-
-# =========================================================
-# DOSYA ADI TEMİZLEME
-# =========================================================
-
-def clean_filename(name):
-    if not name:
-        name = "SosyalMedyaVideo"
-
-    # Dosya sistemlerinde sorun çıkaran karakterler
-    name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '', name)
-
-    # Fazla boşlukları düzelt
-    name = re.sub(r'\s+', ' ', name).strip()
-
-    # Windows'ta 끝 nokta/boşluk sorununu önle
-    name = name.rstrip(". ")
-
-    # Çok uzun dosya adlarını sınırla
-    if len(name) > 180:
-        name = name[:180].rstrip()
-
-    if not name:
-        name = "SosyalMedyaVideo"
-
-    return name
+if os.path.exists(LOCAL_FFMPEG):
+    FFMPEG_LOCATION = LOCAL_FFMPEG
+else:
+    FFMPEG_LOCATION = None
 
 
 # =========================================================
-# YT-DLP TEMEL AYARLARI
+# YARDIMCI FONKSİYONLAR
 # =========================================================
 
-def base_options():
-    return {
+def clean_filename(filename):
+    """
+    Windows/Linux/macOS için sorun çıkarabilecek karakterleri temizler.
+    """
+
+    if not filename:
+        filename = "Ilyas Downloader"
+
+    filename = re.sub(r'[<>:"/\\|?*\x00-\x1F]', '', filename)
+
+    filename = filename.strip()
+
+    if not filename:
+        filename = "Ilyas Downloader"
+
+    return filename
+
+
+def get_common_ydl_options():
+    """
+    Web sunucusunda kullanılacak ortak yt-dlp ayarları.
+    """
+
+    options = {
         "quiet": True,
         "no_warnings": True,
         "noplaylist": True,
-        "retries": 3,
-        "fragment_retries": 3,
-        "socket_timeout": 30,
-
-        # Dosyanın başlığı/metadata'sı kullanılacak
-        "windowsfilenames": True,
         "restrictfilenames": False,
+        "windowsfilenames": False,
+        "nocheckcertificate": True,
     }
 
+    if FFMPEG_LOCATION:
+        options["ffmpeg_location"] = FFMPEG_LOCATION
 
-# =========================================================
-# DESTEKLENEN PLATFORM KONTROLÜ
-# =========================================================
+    return options
 
-def detect_platform(url):
 
-    url_lower = url.lower()
+def get_video_info(url):
+    """
+    Videonun bilgilerini getirir.
+    """
 
-    if "instagram.com" in url_lower:
-        return "Instagram"
+    options = get_common_ydl_options()
 
-    if "tiktok.com" in url_lower:
-        return "TikTok"
+    options["skip_download"] = True
 
-    if "facebook.com" in url_lower or "fb.watch" in url_lower:
-        return "Facebook"
+    with yt_dlp.YoutubeDL(options) as ydl:
+        info = ydl.extract_info(url, download=False)
 
-    return None
+    return info
 
 
 # =========================================================
@@ -85,30 +89,15 @@ def detect_platform(url):
 
 @app.route("/")
 def index():
-    return send_from_directory(BASE_DIR, "index.html")
+    return render_template("index.html")
 
 
 # =========================================================
-# SAĞLIK KONTROLÜ
-# =========================================================
-
-@app.route("/api/health")
-def health():
-
-    return jsonify({
-        "success": True,
-        "status": "online",
-        "service": "Ilyas Social Downloader",
-        "yt_dlp": yt_dlp.version.__version__
-    })
-
-
-# =========================================================
-# VİDEO BİLGİLERİ
+# VIDEO BİLGİSİ
 # =========================================================
 
 @app.route("/api/info", methods=["POST"])
-def video_info():
+def api_info():
 
     try:
 
@@ -118,145 +107,56 @@ def video_info():
 
         if not url:
             return jsonify({
-                "success": False,
-                "error": "Lütfen bir bağlantı gir."
+                "error": "Video bağlantısı girilmedi."
             }), 400
 
-        platform = detect_platform(url)
 
-        if not platform:
-            return jsonify({
-                "success": False,
-                "error": "Şimdilik Instagram, TikTok ve Facebook bağlantıları destekleniyor."
-            }), 400
+        info = get_video_info(url)
 
-        options = base_options()
-        options["skip_download"] = True
 
-        with yt_dlp.YoutubeDL(options) as ydl:
+        duration = info.get("duration")
 
-            info = ydl.extract_info(
-                url,
-                download=False
-            )
+        thumbnail = info.get("thumbnail")
 
-        title = (
-            info.get("description")
-            or info.get("title")
-            or info.get("fulltitle")
-            or "Sosyal Medya Videosu"
-        )
+        title = info.get("title") or "Başlıksız video"
 
-        # Açıklama aşırı uzunsa ilk anlamlı kısmı kullan
-        title = title.strip()
+        uploader = info.get("uploader") or ""
 
-        if len(title) > 180:
-            title = title[:180].rstrip()
-
-        title = clean_filename(title)
-
-        formats = []
-
-        for fmt in info.get("formats", []):
-
-            height = fmt.get("height")
-
-            if not height:
-                continue
-
-            ext = fmt.get("ext")
-
-            if ext not in ["mp4", "webm", "mkv"]:
-                continue
-
-            formats.append({
-                "format_id": fmt.get("format_id"),
-                "height": height,
-                "width": fmt.get("width"),
-                "ext": ext,
-                "fps": fmt.get("fps"),
-                "filesize": (
-                    fmt.get("filesize")
-                    or fmt.get("filesize_approx")
-                ),
-                "has_audio": (
-                    fmt.get("acodec")
-                    not in [None, "none"]
-                )
-            })
-
-        # Kaliteye göre tekilleştir
-        unique = {}
-
-        for fmt in formats:
-
-            key = (
-                fmt["height"],
-                fmt["ext"],
-                fmt["has_audio"]
-            )
-
-            if key not in unique:
-                unique[key] = fmt
-
-        formats = list(unique.values())
-
-        formats.sort(
-            key=lambda x: (
-                x.get("height") or 0,
-                x.get("fps") or 0
-            ),
-            reverse=True
-        )
-
-        # Kullanıcıya uygun kalite listesi
-        qualities = []
-
-        seen_heights = set()
-
-        for fmt in formats:
-
-            height = fmt.get("height")
-
-            if height in seen_heights:
-                continue
-
-            seen_heights.add(height)
-
-            qualities.append({
-                "height": height,
-                "label": f"{height}p",
-                "format_id": fmt.get("format_id")
-            })
 
         return jsonify({
+
             "success": True,
-            "platform": platform,
+
             "title": title,
-            "thumbnail": info.get("thumbnail"),
-            "duration": info.get("duration"),
-            "uploader": info.get("uploader"),
-            "description": info.get("description"),
-            "qualities": qualities,
-            "formats": formats
+
+            "thumbnail": thumbnail,
+
+            "duration": duration,
+
+            "uploader": uploader,
+
+            "webpage_url": info.get("webpage_url"),
+
         })
+
 
     except Exception as e:
 
-        print("INFO ERROR:", repr(e))
-
         return jsonify({
-            "success": False,
+
             "error": str(e)
+
         }), 500
 
 
 # =========================================================
-# İNDİRME
+# VIDEO İNDİRME
 # =========================================================
 
 @app.route("/api/download", methods=["POST"])
-def download():
+def api_download():
+
+    temp_dir = None
 
     try:
 
@@ -264,241 +164,278 @@ def download():
 
         url = data.get("url", "").strip()
 
-        media_type = data.get(
-            "type",
-            "mp4"
-        ).lower()
+        file_format = data.get("format", "mp4")
 
-        quality = data.get(
-            "quality"
-        )
+        quality = str(data.get("quality", "best"))
 
-        bitrate = data.get(
-            "bitrate",
-            "192"
-        )
+        bitrate = str(data.get("bitrate", "192"))
+
 
         if not url:
+
             return jsonify({
-                "success": False,
-                "error": "Bağlantı bulunamadı."
+                "error": "Video bağlantısı girilmedi."
             }), 400
 
-        platform = detect_platform(url)
-
-        if not platform:
-            return jsonify({
-                "success": False,
-                "error": "Desteklenmeyen platform."
-            }), 400
 
         # -------------------------------------------------
-        # ÖNCE METADATA
+        # FORMAT KONTROLÜ
         # -------------------------------------------------
 
-        info_options = base_options()
-        info_options["skip_download"] = True
+        if file_format not in ["mp4", "mp3"]:
 
-        with yt_dlp.YoutubeDL(info_options) as ydl:
+            file_format = "mp4"
 
-            info = ydl.extract_info(
-                url,
-                download=False
+
+        # -------------------------------------------------
+        # GEÇİCİ KLASÖR
+        # -------------------------------------------------
+
+        temp_dir = tempfile.mkdtemp(
+            prefix="ilyas_downloader_"
+        )
+
+
+        # -------------------------------------------------
+        # DOSYA ADI
+        # -------------------------------------------------
+
+        info = get_video_info(url)
+
+        original_title = info.get("title") or "Ilyas Downloader"
+
+        original_title = clean_filename(original_title)
+
+
+        # =================================================
+        # MP3
+        # =================================================
+
+        if file_format == "mp3":
+
+            output_template = os.path.join(
+                temp_dir,
+                "%(title)s.%(ext)s"
             )
 
-        # -------------------------------------------------
-        # ORİJİNAL BAŞLIK / AÇIKLAMA
-        # -------------------------------------------------
 
-        original_title = (
-            info.get("description")
-            or info.get("title")
-            or info.get("fulltitle")
-            or "Sosyal Medya Videosu"
-        )
+            ydl_opts = get_common_ydl_options()
 
-        filename = clean_filename(
-            original_title
-        )
+            ydl_opts.update({
 
-        # -------------------------------------------------
-        # AYNI DOSYA ADI VARSA ÇAKIŞMAYI ÖNLE
-        # -------------------------------------------------
+                "format": "bestaudio/best",
 
-        job_id = uuid.uuid4().hex[:8]
+                "outtmpl": output_template,
 
-        if media_type == "mp3":
-            extension = "mp3"
-        else:
-            extension = "mp4"
+                "postprocessors": [
 
-        output_template = os.path.join(
-            DOWNLOAD_DIR,
-            f"{filename}_{job_id}.%(ext)s"
-        )
+                    {
+                        "key": "FFmpegExtractAudio",
 
-        options = base_options()
+                        "preferredcodec": "mp3",
 
-        options.update({
-            "outtmpl": output_template,
-            "merge_output_format": "mp4",
-            "overwrites": False,
-            "quiet": False
-        })
+                        "preferredquality": bitrate,
 
-        # -------------------------------------------------
-        # MP3
-        # -------------------------------------------------
+                    }
 
-        if media_type == "mp3":
+                ],
 
-            options["format"] = "bestaudio/best"
+            })
 
-            options["postprocessors"] = [
-                {
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "mp3",
-                    "preferredquality": str(bitrate)
-                }
-            ]
 
-        # -------------------------------------------------
+        # =================================================
         # MP4
-        # -------------------------------------------------
+        # =================================================
 
         else:
 
-            if quality:
+            output_template = os.path.join(
+                temp_dir,
+                "%(title)s.%(ext)s"
+            )
 
-                try:
-                    height = int(quality)
 
-                    options["format"] = (
-                        f"bestvideo[height<={height}]"
-                        f"+bestaudio/"
-                        f"best[height<={height}]/"
-                        f"best"
-                    )
+            if quality == "best":
 
-                except Exception:
-
-                    options["format"] = (
-                        "bestvideo+bestaudio/best"
-                    )
+                video_format = (
+                    "bestvideo+bestaudio/"
+                    "best"
+                )
 
             else:
 
-                options["format"] = (
-                    "bestvideo+bestaudio/best"
+                try:
+
+                    height = int(quality)
+
+                except:
+
+                    height = 1080
+
+
+                video_format = (
+                    f"bestvideo[height<={height}]"
+                    "+bestaudio/"
+                    f"best[height<={height}]"
                 )
 
-        # -------------------------------------------------
+
+            ydl_opts = get_common_ydl_options()
+
+            ydl_opts.update({
+
+                "format": video_format,
+
+                "merge_output_format": "mp4",
+
+                "outtmpl": output_template,
+
+            })
+
+
+        # =================================================
         # İNDİR
-        # -------------------------------------------------
+        # =================================================
 
-        print("")
-        print("================================")
-        print("DOWNLOAD")
-        print("Platform:", platform)
-        print("Title:", original_title)
-        print("Type:", media_type)
-        print("Quality:", quality)
-        print("Bitrate:", bitrate)
-        print("================================")
-
-        with yt_dlp.YoutubeDL(options) as ydl:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
 
             ydl.download([url])
 
-        # -------------------------------------------------
+
+        # =================================================
         # DOSYAYI BUL
-        # -------------------------------------------------
+        # =================================================
 
-        files = os.listdir(DOWNLOAD_DIR)
+        files = []
 
-        matching = []
+        for root, dirs, filenames in os.walk(temp_dir):
 
-        for file in files:
+            for filename in filenames:
 
-            if job_id not in file:
-                continue
+                full_path = os.path.join(
+                    root,
+                    filename
+                )
 
-            if file.endswith(".part"):
-                continue
+                if os.path.isfile(full_path):
 
-            if file.endswith(".ytdl"):
-                continue
+                    files.append(full_path)
 
-            full_path = os.path.join(
-                DOWNLOAD_DIR,
-                file
-            )
 
-            if os.path.isfile(full_path):
-                matching.append(file)
-
-        if not matching:
+        if not files:
 
             return jsonify({
-                "success": False,
+
                 "error": "İndirilen dosya bulunamadı."
+
             }), 500
 
-        final_file = matching[0]
 
-        # -------------------------------------------------
-        # KULLANICIYA GÖSTERİLECEK İSİM
-        # -------------------------------------------------
+        # MP3 / MP4 dosyasını bul
+        selected_file = None
 
-        if media_type == "mp3":
 
-            visible_filename = (
-                filename + ".mp3"
+        for file_path in files:
+
+            ext = os.path.splitext(file_path)[1].lower()
+
+            if file_format == "mp3" and ext == ".mp3":
+
+                selected_file = file_path
+
+                break
+
+            if file_format == "mp4" and ext == ".mp4":
+
+                selected_file = file_path
+
+                break
+
+
+        if not selected_file:
+
+            selected_file = files[0]
+
+
+        # =================================================
+        # ORİJİNAL BAŞLIK
+        # =================================================
+
+        extension = (
+            ".mp3"
+            if file_format == "mp3"
+            else ".mp4"
+        )
+
+
+        final_filename = (
+            clean_filename(original_title)
+            + extension
+        )
+
+
+        # =================================================
+        # DOSYAYI KULLANICIYA GÖNDER
+        # =================================================
+
+        response = send_file(
+
+            selected_file,
+
+            as_attachment=True,
+
+            download_name=final_filename,
+
+            mimetype=(
+                "audio/mpeg"
+                if file_format == "mp3"
+                else "video/mp4"
             )
 
-        else:
+        )
 
-            visible_filename = (
-                filename + ".mp4"
-            )
 
-        return jsonify({
-            "success": True,
-            "platform": platform,
-            "title": original_title,
-            "filename": visible_filename,
-            "download_url": (
-                "/download-file/"
-                + final_file
-            )
-        })
+        # =================================================
+        # TEMİZLEME
+        # =================================================
+
+        @response.call_on_close
+        def cleanup():
+
+            try:
+
+                shutil.rmtree(
+                    temp_dir,
+                    ignore_errors=True
+                )
+
+            except:
+
+                pass
+
+
+        return response
+
 
     except Exception as e:
 
-        print("DOWNLOAD ERROR:", repr(e))
+        if temp_dir:
+
+            shutil.rmtree(
+                temp_dir,
+                ignore_errors=True
+            )
+
 
         return jsonify({
-            "success": False,
+
             "error": str(e)
+
         }), 500
 
 
 # =========================================================
-# DOSYA SERVİSİ
-# =========================================================
-
-@app.route("/download-file/<path:filename>")
-def download_file(filename):
-
-    return send_from_directory(
-        DOWNLOAD_DIR,
-        filename,
-        as_attachment=True
-    )
-
-
-# =========================================================
-# UYGULAMA
+# SUNUCU
 # =========================================================
 
 if __name__ == "__main__":
@@ -511,6 +448,9 @@ if __name__ == "__main__":
     )
 
     app.run(
+
         host="0.0.0.0",
+
         port=port
+
     )
