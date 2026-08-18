@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Ilyas Downloader</title>
 
     <style>
@@ -13,78 +14,106 @@
         }
 
         body {
-            font-family: Arial, Helvetica, sans-serif;
             min-height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
             background:
-                radial-gradient(circle at top left, #27304f 0%, transparent 35%),
-                radial-gradient(circle at bottom right, #321d46 0%, transparent 35%),
-                #080a10;
-            color: white;
-            display: flex;
-            justify-content: center;
-            padding: 30px 15px;
+                radial-gradient(circle at 20% 10%, rgba(80,90,150,.25), transparent 35%),
+                radial-gradient(circle at 80% 90%, rgba(120,60,120,.20), transparent 35%),
+                #08090d;
+            color: #fff;
         }
 
         .container {
-            width: 100%;
-            max-width: 1050px;
+            width: min(1050px, 94%);
+            margin: auto;
+            padding: 35px 0 50px;
         }
+
+        /* HEADER */
 
         .header {
             text-align: center;
-            margin: 25px 0 35px;
+            margin-bottom: 35px;
         }
 
         .logo {
             width: 70px;
             height: 70px;
             margin: auto;
+
             border-radius: 20px;
-            background: linear-gradient(135deg, #ffffff, #8b8b8b);
+
             display: flex;
             align-items: center;
             justify-content: center;
+
+            background: linear-gradient(
+                135deg,
+                #ffffff,
+                #8c8c8c
+            );
+
             color: #111;
-            font-size: 30px;
+            font-size: 25px;
             font-weight: 900;
-            box-shadow: 0 10px 40px rgba(255,255,255,.12);
+
+            box-shadow:
+                0 15px 50px rgba(255,255,255,.10);
         }
 
-        h1 {
+        .header h1 {
+            font-size: 42px;
             margin-top: 18px;
-            font-size: 38px;
             letter-spacing: -1px;
         }
 
-        .subtitle {
-            color: #9ca3af;
-            margin-top: 8px;
+        .header p {
+            color: #8d94a3;
+            margin-top: 10px;
             font-size: 15px;
         }
 
+        /* MAIN CARD */
+
         .card {
-            background: rgba(18, 21, 30, .88);
+            background: rgba(18,20,27,.90);
+
             border: 1px solid rgba(255,255,255,.08);
-            border-radius: 24px;
+
+            border-radius: 25px;
+
             padding: 28px;
-            box-shadow: 0 25px 80px rgba(0,0,0,.35);
+
+            box-shadow:
+                0 30px 100px rgba(0,0,0,.45);
+
             backdrop-filter: blur(20px);
         }
 
-        .url-row {
+        /* URL */
+
+        .url-area {
             display: flex;
             gap: 12px;
         }
 
         .url-input {
             flex: 1;
+
             height: 58px;
+
             border-radius: 15px;
-            border: 1px solid #303544;
-            background: #0d1017;
+
+            border: 1px solid #303541;
+
+            background: #0d1016;
+
             color: white;
+
             padding: 0 18px;
+
             font-size: 16px;
+
             outline: none;
         }
 
@@ -92,164 +121,239 @@
             border-color: #777;
         }
 
-        button {
+        .info-button {
+            height: 58px;
+
+            padding: 0 25px;
+
             border: none;
-            cursor: pointer;
-            color: white;
-            font-weight: 700;
-            transition: .2s;
-        }
 
-        .info-btn {
-            min-width: 150px;
             border-radius: 15px;
-            background: linear-gradient(135deg, #ffffff, #bdbdbd);
-            color: #101010;
+
+            background: white;
+
+            color: #111;
+
             font-size: 15px;
+
+            font-weight: 700;
+
+            cursor: pointer;
         }
 
-        button:hover {
-            transform: translateY(-2px);
-            opacity: .92;
+        .info-button:hover {
+            background: #ddd;
         }
 
-        .video-info {
+        /* VIDEO */
+
+        .video-card {
             display: none;
+
             margin-top: 25px;
-            padding: 20px;
+
+            padding: 18px;
+
             border-radius: 18px;
-            background: #0d1017;
-            border: 1px solid #292e3a;
+
+            background: #0d1016;
+
+            border: 1px solid #282d38;
         }
 
-        .video-preview {
+        .video-content {
             display: flex;
             gap: 18px;
             align-items: center;
         }
 
         .thumbnail {
-            width: 230px;
-            height: 130px;
+            width: 240px;
+
+            aspect-ratio: 16 / 9;
+
             object-fit: cover;
-            border-radius: 12px;
-            background: #191d27;
+
+            border-radius: 13px;
+
+            background: #181b23;
         }
 
         .video-title {
-            font-size: 19px;
+            font-size: 20px;
             font-weight: 700;
             line-height: 1.4;
         }
 
         .video-meta {
-            color: #8f96a3;
+            color: #858c99;
             margin-top: 10px;
             font-size: 14px;
         }
 
+        /* SETTINGS */
+
         .settings {
             display: none;
+
             margin-top: 25px;
+        }
+
+        .settings-title {
+            font-size: 18px;
+            font-weight: 700;
+
+            margin-bottom: 15px;
         }
 
         .settings-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
             gap: 15px;
         }
 
         .setting {
-            background: #0d1017;
-            border: 1px solid #292e3a;
-            border-radius: 15px;
             padding: 16px;
+
+            background: #0d1016;
+
+            border: 1px solid #282d38;
+
+            border-radius: 15px;
         }
 
         .setting label {
             display: block;
-            color: #9ca3af;
-            font-size: 13px;
+
             margin-bottom: 9px;
+
+            color: #8d94a3;
+
+            font-size: 13px;
         }
 
         select {
             width: 100%;
+
             height: 45px;
-            background: #151923;
-            color: white;
-            border: 1px solid #303544;
+
             border-radius: 10px;
+
+            border: 1px solid #303541;
+
+            background: #151922;
+
+            color: white;
+
             padding: 0 12px;
+
             outline: none;
         }
 
-        .download-btn {
+        /* DOWNLOAD */
+
+        .download-button {
             width: 100%;
-            height: 55px;
+
+            height: 58px;
+
             margin-top: 20px;
-            border-radius: 14px;
-            background: linear-gradient(135deg, #ffffff, #a9a9a9);
-            color: #101010;
+
+            border: none;
+
+            border-radius: 15px;
+
+            background: linear-gradient(
+                135deg,
+                #ffffff,
+                #bcbcbc
+            );
+
+            color: #111;
+
             font-size: 16px;
+
+            font-weight: 800;
+
+            cursor: pointer;
         }
+
+        .download-button:hover {
+            filter: brightness(.9);
+        }
+
+        /* STATUS */
 
         .status {
             display: none;
+
             margin-top: 20px;
+
             padding: 15px;
+
             border-radius: 12px;
-            background: #11151e;
-            color: #b8bec9;
+
+            background: #11151d;
+
             text-align: center;
+
+            color: #aeb4c0;
         }
 
         .error {
-            color: #ff7676;
+            color: #ff7474;
         }
 
         .success {
-            color: #7ee787;
+            color: #70e38a;
         }
+
+        /* FOOTER */
 
         .footer {
             text-align: center;
+
             margin-top: 25px;
-            color: #555d6d;
+
+            color: #555d6b;
+
             font-size: 12px;
         }
 
+        /* MOBILE */
+
         @media (max-width: 700px) {
-            body {
-                padding: 15px 10px;
+
+            .container {
+                padding-top: 20px;
+            }
+
+            .header h1 {
+                font-size: 32px;
             }
 
             .card {
                 padding: 18px;
-                border-radius: 18px;
             }
 
-            h1 {
-                font-size: 30px;
-            }
-
-            .url-row {
+            .url-area {
                 flex-direction: column;
             }
 
-            .info-btn {
-                height: 52px;
+            .info-button {
+                width: 100%;
             }
 
-            .video-preview {
+            .video-content {
                 flex-direction: column;
                 align-items: stretch;
             }
 
             .thumbnail {
                 width: 100%;
-                height: auto;
-                aspect-ratio: 16 / 9;
             }
 
             .settings-grid {
@@ -259,23 +363,38 @@
     </style>
 </head>
 
+
 <body>
 
 <div class="container">
 
+    <!-- HEADER -->
+
     <div class="header">
-        <div class="logo">ID</div>
 
-        <h1>Ilyas Downloader</h1>
-
-        <div class="subtitle">
-            Instagram • TikTok • Facebook • YouTube
+        <div class="logo">
+            ID
         </div>
+
+        <h1>
+            Ilyas Downloader
+        </h1>
+
+        <p>
+            Instagram • TikTok • Facebook • YouTube
+        </p>
+
     </div>
+
+
+    <!-- MAIN -->
 
     <div class="card">
 
-        <div class="url-row">
+        <!-- URL -->
+
+        <div class="url-area">
+
             <input
                 id="url"
                 class="url-input"
@@ -283,31 +402,47 @@
                 placeholder="Video bağlantısını buraya yapıştır..."
             >
 
-            <button class="info-btn" onclick="getInfo()">
+            <button
+                class="info-button"
+                onclick="getVideoInfo()"
+            >
                 Videoyu Getir
             </button>
+
         </div>
 
 
-        <div id="videoInfo" class="video-info">
+        <!-- VIDEO INFO -->
 
-            <div class="video-preview">
+        <div
+            id="videoCard"
+            class="video-card"
+        >
+
+            <div class="video-content">
 
                 <img
                     id="thumbnail"
                     class="thumbnail"
                     src=""
-                    alt="Video"
+                    alt="Video thumbnail"
                 >
 
                 <div>
-                    <div id="videoTitle" class="video-title">
-                        Video başlığı
+
+                    <div
+                        id="videoTitle"
+                        class="video-title"
+                    >
+                        Video
                     </div>
 
-                    <div id="videoMeta" class="video-meta">
-                        Video bilgileri yükleniyor...
+                    <div
+                        id="videoMeta"
+                        class="video-meta"
+                    >
                     </div>
+
                 </div>
 
             </div>
@@ -315,51 +450,121 @@
         </div>
 
 
-        <div id="settings" class="settings">
+        <!-- SETTINGS -->
+
+        <div
+            id="settings"
+            class="settings"
+        >
+
+            <div class="settings-title">
+                İndirme Ayarları
+            </div>
+
 
             <div class="settings-grid">
 
+
+                <!-- FORMAT -->
+
                 <div class="setting">
 
-                    <label>Dosya türü</label>
+                    <label>
+                        Dosya türü
+                    </label>
 
-                    <select id="format" onchange="changeFormat()">
-                        <option value="mp4">MP4 Video</option>
-                        <option value="mp3">MP3 Ses</option>
+                    <select
+                        id="format"
+                        onchange="formatChanged()"
+                    >
+
+                        <option value="mp4">
+                            MP4 Video
+                        </option>
+
+                        <option value="mp3">
+                            MP3 Ses
+                        </option>
+
                     </select>
 
                 </div>
 
 
-                <div class="setting" id="qualityBox">
+                <!-- QUALITY -->
 
-                    <label>Video kalitesi</label>
+                <div
+                    id="qualitySetting"
+                    class="setting"
+                >
+
+                    <label>
+                        Video kalitesi
+                    </label>
 
                     <select id="quality">
 
-                        <option value="best">En iyi kalite</option>
-                        <option value="2160">2160p (4K)</option>
-                        <option value="1440">1440p</option>
-                        <option value="1080">1080p</option>
-                        <option value="720">720p</option>
-                        <option value="480">480p</option>
-                        <option value="360">360p</option>
+                        <option value="best">
+                            En iyi kalite
+                        </option>
+
+                        <option value="2160">
+                            2160p • 4K
+                        </option>
+
+                        <option value="1440">
+                            1440p
+                        </option>
+
+                        <option value="1080">
+                            1080p
+                        </option>
+
+                        <option value="720">
+                            720p
+                        </option>
+
+                        <option value="480">
+                            480p
+                        </option>
+
+                        <option value="360">
+                            360p
+                        </option>
 
                     </select>
 
                 </div>
 
 
-                <div class="setting" id="bitrateBox">
+                <!-- BITRATE -->
 
-                    <label>MP3 bitrate</label>
+                <div
+                    id="bitrateSetting"
+                    class="setting"
+                >
+
+                    <label>
+                        MP3 bitrate
+                    </label>
 
                     <select id="bitrate">
 
-                        <option value="128">128 kbps</option>
-                        <option value="192">192 kbps</option>
-                        <option value="256">256 kbps</option>
-                        <option value="320">320 kbps</option>
+                        <option value="128">
+                            128 kbps
+                        </option>
+
+                        <option value="192">
+                            192 kbps
+                        </option>
+
+                        <option value="256">
+                            256 kbps
+                        </option>
+
+                        <option value="320">
+                            320 kbps
+                        </option>
 
                     </select>
 
@@ -368,14 +573,25 @@
             </div>
 
 
-            <button class="download-btn" onclick="downloadVideo()">
+            <!-- DOWNLOAD -->
+
+            <button
+                class="download-button"
+                onclick="downloadVideo()"
+            >
                 ⬇ İNDİR
             </button>
 
         </div>
 
 
-        <div id="status" class="status"></div>
+        <!-- STATUS -->
+
+        <div
+            id="status"
+            class="status"
+        >
+        </div>
 
     </div>
 
@@ -389,194 +605,153 @@
 
 <script>
 
-async function getInfo() {
 
-    const url = document.getElementById("url").value.trim();
+// =====================================================
+// MESAJ
+// =====================================================
+
+function showStatus(message, type = "") {
+
+    const status =
+        document.getElementById("status");
+
+    status.style.display = "block";
+
+    status.className =
+        "status " + type;
+
+    status.textContent =
+        message;
+}
+
+
+function hideStatus() {
+
+    document.getElementById("status")
+        .style.display = "none";
+}
+
+
+// =====================================================
+// VİDEO BİLGİSİ
+// =====================================================
+
+async function getVideoInfo() {
+
+    const url =
+        document.getElementById("url")
+            .value
+            .trim();
+
 
     if (!url) {
-        showStatus("Lütfen bir video bağlantısı gir.", "error");
+
+        showStatus(
+            "Lütfen video bağlantısını gir.",
+            "error"
+        );
+
         return;
     }
 
-    showStatus("Video bilgileri getiriliyor...", "");
+
+    showStatus(
+        "Video bilgileri getiriliyor..."
+    );
+
 
     try {
 
-        const response = await fetch("/api/info", {
+        const response =
+            await fetch(
+                "/api/info",
+                {
+                    method: "POST",
 
-            method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
 
-            headers: {
-                "Content-Type": "application/json"
-            },
+                    body: JSON.stringify({
+                        url: url
+                    })
+                }
+            );
 
-            body: JSON.stringify({
-                url: url
-            })
 
-        });
+        const data =
+            await response.json();
 
-        const data = await response.json();
 
         if (!response.ok || data.error) {
-            throw new Error(data.error || "Video bilgileri alınamadı.");
+
+            throw new Error(
+                data.error ||
+                "Video bilgileri alınamadı."
+            );
         }
 
 
-        document.getElementById("videoInfo").style.display = "block";
-        document.getElementById("settings").style.display = "block";
+        document.getElementById(
+            "videoCard"
+        ).style.display = "block";
 
 
-        document.getElementById("videoTitle").textContent =
-            data.title || "Başlıksız video";
+        document.getElementById(
+            "settings"
+        ).style.display = "block";
 
 
-        document.getElementById("videoMeta").textContent =
-            `${data.duration ? formatDuration(data.duration) : ""}`;
+        document.getElementById(
+            "videoTitle"
+        ).textContent =
+            data.title ||
+            "Başlıksız video";
 
 
-        if (data.thumbnail) {
+        document.getElementById(
+            "thumbnail"
+        ).src =
+            data.thumbnail || "";
 
-            document.getElementById("thumbnail").src =
-                data.thumbnail;
+
+        let meta = "";
+
+
+        if (data.duration) {
+
+            meta +=
+                "Süre: " +
+                formatDuration(
+                    data.duration
+                );
 
         }
+
+
+        if (data.uploader) {
+
+            if (meta) {
+                meta += " • ";
+            }
+
+            meta +=
+                data.uploader;
+        }
+
+
+        document.getElementById(
+            "videoMeta"
+        ).textContent =
+            meta;
 
 
         hideStatus();
 
-    } catch (error) {
-
-        showStatus(error.message, "error");
-
     }
 
-}
-
-
-function changeFormat() {
-
-    const format =
-        document.getElementById("format").value;
-
-    const qualityBox =
-        document.getElementById("qualityBox");
-
-    const bitrateBox =
-        document.getElementById("bitrateBox");
-
-
-    if (format === "mp3") {
-
-        qualityBox.style.display = "none";
-        bitrateBox.style.display = "block";
-
-    } else {
-
-        qualityBox.style.display = "block";
-        bitrateBox.style.display = "block";
-
-    }
-
-}
-
-
-async function downloadVideo() {
-
-    const url =
-        document.getElementById("url").value.trim();
-
-    const format =
-        document.getElementById("format").value;
-
-    const quality =
-        document.getElementById("quality").value;
-
-    const bitrate =
-        document.getElementById("bitrate").value;
-
-
-    if (!url) {
-        showStatus("Önce video bağlantısını gir.", "error");
-        return;
-    }
-
-
-    showStatus("İndirme hazırlanıyor...", "");
-
-
-    try {
-
-        const response = await fetch("/api/download", {
-
-            method: "POST",
-
-            headers: {
-                "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify({
-
-                url: url,
-
-                format: format,
-
-                quality: quality,
-
-                bitrate: bitrate
-
-            })
-
-        });
-
-
-        if (!response.ok) {
-
-            let errorText = "İndirme başarısız.";
-
-            try {
-
-                const data = await response.json();
-
-                if (data.error) {
-                    errorText = data.error;
-                }
-
-            } catch(e) {}
-
-            throw new Error(errorText);
-        }
-
-
-        const blob = await response.blob();
-
-        const downloadUrl =
-            window.URL.createObjectURL(blob);
-
-
-        const a =
-            document.createElement("a");
-
-        a.href = downloadUrl;
-
-        a.download = getFileNameFromResponse(response);
-
-        document.body.appendChild(a);
-
-        a.click();
-
-        a.remove();
-
-        window.URL.revokeObjectURL(downloadUrl);
-
-
-        showStatus(
-            "İndirme tamamlandı.",
-            "success"
-        );
-
-
-    } catch (error) {
+    catch (error) {
 
         showStatus(
             error.message,
@@ -588,106 +763,302 @@ async function downloadVideo() {
 }
 
 
-function getFileNameFromResponse(response) {
+// =====================================================
+// FORMAT DEĞİŞTİ
+// =====================================================
 
-    const disposition =
-        response.headers.get("Content-Disposition");
+function formatChanged() {
+
+    const format =
+        document.getElementById(
+            "format"
+        ).value;
 
 
-    if (disposition) {
+    const quality =
+        document.getElementById(
+            "qualitySetting"
+        );
 
-        const match =
-            disposition.match(
-                /filename\*?=(?:UTF-8'')?["']?([^"';]+)["']?/i
-            );
 
-        if (match) {
+    const bitrate =
+        document.getElementById(
+            "bitrateSetting"
+        );
 
-            return decodeURIComponent(
-                match[1]
-            );
 
-        }
+    if (format === "mp3") {
+
+        quality.style.display =
+            "none";
+
+        bitrate.style.display =
+            "block";
 
     }
 
+    else {
 
-    const title =
-        document.getElementById("videoTitle").textContent
-        || "IlyasDownloader";
+        quality.style.display =
+            "block";
 
+        bitrate.style.display =
+            "block";
 
-    const format =
-        document.getElementById("format").value;
-
-
-    return sanitizeFileName(title) + "." + format;
+    }
 
 }
 
 
-function sanitizeFileName(name) {
+// =====================================================
+// İNDİR
+// =====================================================
+
+async function downloadVideo() {
+
+    const url =
+        document.getElementById(
+            "url"
+        ).value.trim();
+
+
+    const format =
+        document.getElementById(
+            "format"
+        ).value;
+
+
+    const quality =
+        document.getElementById(
+            "quality"
+        ).value;
+
+
+    const bitrate =
+        document.getElementById(
+            "bitrate"
+        ).value;
+
+
+    if (!url) {
+
+        showStatus(
+            "Önce video bağlantısını gir.",
+            "error"
+        );
+
+        return;
+    }
+
+
+    showStatus(
+        "Video hazırlanıyor, lütfen bekleyin..."
+    );
+
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/download",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+
+                        url: url,
+
+                        format: format,
+
+                        quality: quality,
+
+                        bitrate: bitrate
+
+                    })
+                }
+            );
+
+
+        if (!response.ok) {
+
+            let message =
+                "İndirme başarısız.";
+
+            try {
+
+                const errorData =
+                    await response.json();
+
+                if (errorData.error) {
+
+                    message =
+                        errorData.error;
+                }
+
+            }
+
+            catch (e) {}
+
+
+            throw new Error(message);
+        }
+
+
+        const blob =
+            await response.blob();
+
+
+        const downloadUrl =
+            window.URL.createObjectURL(
+                blob
+            );
+
+
+        const link =
+            document.createElement(
+                "a"
+            );
+
+
+        link.href =
+            downloadUrl;
+
+
+        const title =
+            document.getElementById(
+                "videoTitle"
+            ).textContent ||
+            "Ilyas Downloader";
+
+
+        link.download =
+            cleanFileName(title) +
+            "." +
+            format;
+
+
+        document.body.appendChild(
+            link
+        );
+
+
+        link.click();
+
+
+        link.remove();
+
+
+        window.URL.revokeObjectURL(
+            downloadUrl
+        );
+
+
+        showStatus(
+            "İndirme tamamlandı.",
+            "success"
+        );
+
+    }
+
+    catch (error) {
+
+        showStatus(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+// =====================================================
+// DOSYA ADI TEMİZLE
+// =====================================================
+
+function cleanFileName(name) {
 
     return name
-        .replace(/[<>:"/\\|?*]/g, "")
+        .replace(
+            /[<>:"\/\\|?*]/g,
+            ""
+        )
         .trim();
 
 }
 
 
+// =====================================================
+// SÜRE
+// =====================================================
+
 function formatDuration(seconds) {
 
-    seconds = Number(seconds);
+    seconds =
+        Number(seconds);
 
-    if (!seconds || isNaN(seconds)) {
+
+    if (
+        !seconds ||
+        isNaN(seconds)
+    ) {
         return "";
     }
 
+
     const hours =
-        Math.floor(seconds / 3600);
+        Math.floor(
+            seconds / 3600
+        );
+
 
     const minutes =
-        Math.floor((seconds % 3600) / 60);
+        Math.floor(
+            (seconds % 3600) / 60
+        );
+
 
     const secs =
-        Math.floor(seconds % 60);
+        Math.floor(
+            seconds % 60
+        );
 
 
     if (hours > 0) {
 
-        return `${hours}:${String(minutes).padStart(2,"0")}:${String(secs).padStart(2,"0")}`;
+        return (
+            hours +
+            ":" +
+            String(minutes)
+                .padStart(2, "0") +
+            ":" +
+            String(secs)
+                .padStart(2, "0")
+        );
 
     }
 
-    return `${minutes}:${String(secs).padStart(2,"0")}`;
+
+    return (
+        minutes +
+        ":" +
+        String(secs)
+            .padStart(2, "0")
+    );
 
 }
 
 
-function showStatus(message, type) {
+// =====================================================
+// BAŞLANGIÇ
+// =====================================================
 
-    const status =
-        document.getElementById("status");
-
-    status.style.display = "block";
-
-    status.textContent = message;
-
-    status.className =
-        "status " + type;
-
-}
-
-
-function hideStatus() {
-
-    document.getElementById("status").style.display =
-        "none";
-
-}
-
-
-changeFormat();
+formatChanged();
 
 </script>
 
